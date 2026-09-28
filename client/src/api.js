@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-// In production (Vercel), VITE_API_URL is '' so calls go to /api on the same domain.
+// In production (Vercel), calls go to /api on the same domain.
 // Locally it falls back to http://localhost:4000.
-const base = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
+const base = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL ?? 'http://localhost:4000');
 const apiBase = base ? `${base}/api` : '/api';
 export const api = axios.create({ baseURL: apiBase, withCredentials: true });
 
