@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// In production (Vercel), VITE_API_URL is '' so calls go to /api on the same domain.
+// Locally it falls back to http://localhost:4000.
 const base = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
-export const api = axios.create({ baseURL: `${base}/api`, withCredentials: true });
+const apiBase = base ? `${base}/api` : '/api';
+export const api = axios.create({ baseURL: apiBase, withCredentials: true });
 
 // The access token lives in memory only. The refresh token lives in an httpOnly cookie.
 let accessToken = null;
@@ -18,7 +21,7 @@ api.interceptors.request.use((cfg) => {
 let refreshing = null;
 export function refreshAccessToken() {
   refreshing ??= axios
-    .post(`${base}/api/auth/refresh-token`, null, { withCredentials: true })
+    .post(base ? `${base}/api/auth/refresh-token` : '/api/auth/refresh-token', null, { withCredentials: true })
     .then((r) => (accessToken = r.data.accessToken))
     .finally(() => {
       refreshing = null;
