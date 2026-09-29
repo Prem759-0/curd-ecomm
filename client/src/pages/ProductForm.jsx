@@ -210,21 +210,39 @@ export default function ProductForm() {
     setErrors({});
     setMessage('');
 
-    // Filter out base64 data URLs (can't store in DB without a CDN)
-    const urlImages = form.images.filter(s => !s.startsWith('data:'));
-
-    const body = {
-      name: form.name,
-      description: form.description,
-      price: form.price === '' ? undefined : Number(form.price),
-      stock: form.stock === '' ? undefined : Number(form.stock),
-      category: form.category,
-      // Send the first non-base64 URL as legacy `image` for compat
-      image: urlImages[0] || presetSelected || '',
-      images: urlImages,
-    };
-
     try {
+      // Separate already-uploaded URLs from new base64 data: images
+      const existingUrls = form.images.filter(s => !s.startsWith('data:'));
+      const base64Images = form.images.filter(s => s.startsWith('data:'));
+
+      let allUrls = existingUrls;
+
+      // If there are new files to upload, send them to Cloudinary via our server
+      if (base64Images.length > 0) {
+        const formData = new FormData();
+        // Convert base64 strings back to Blobs for upload
+        for (const b64 of base64Images) {
+          const res = await fetch(b64);
+          const blob = await res.blob();
+          formData.append('images', blob, 'upload.jpg');
+        }
+        const { data } = await api.post('/products/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        // Preserve original order: uploaded URLs replace the base64 slots
+        allUrls = [...existingUrls, ...data.urls];
+      }
+
+      const body = {
+        name: form.name,
+        description: form.description,
+        price: form.price === '' ? undefined : Number(form.price),
+        stock: form.stock === '' ? undefined : Number(form.stock),
+        category: form.category,
+        image: allUrls[0] || presetSelected || '',
+        images: allUrls,
+      };
+
       if (editing) await api.put(`/products/${id}`, body);
       else await api.post('/products', body);
       nav('/shop');
