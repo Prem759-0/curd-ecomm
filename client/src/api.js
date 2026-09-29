@@ -1,5 +1,5 @@
 import axios from 'axios';
-
+   console.log('API BASE IS:', import.meta.env.VITE_API_URL);
 // In production (Vercel), calls go to /api on the same domain.
 // Locally it falls back to http://localhost:4000.
 const base = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL ?? 'http://localhost:4000');
